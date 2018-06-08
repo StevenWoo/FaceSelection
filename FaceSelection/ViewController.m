@@ -49,10 +49,10 @@ UIImage *mImage = nil;
     }
     //get the documents directory:
     NSString *documentsDirectory = [self getDocumentsDirectory];
-    NSString *fileName = [NSString stringWithFormat:@"%@/jsonfile.txt",
+    NSString *fileName = [NSString stringWithFormat:@"%@/face_metadata.json",
                           documentsDirectory];
     NSString *content = [mArrayFaceBorders componentsJoinedByString:@","];
-    NSLog(@"writing to %@", fileName);
+    NSLog(@"writing json to %@", fileName);
     [content writeToFile:fileName
               atomically:NO
                 encoding:NSUTF8StringEncoding
@@ -64,6 +64,8 @@ UIImage *mImage = nil;
     
     NSString *imageFile =[NSString stringWithFormat:@"%@/%@", documentsDirectory, filename];
     [UIImagePNGRepresentation(image) writeToFile:imageFile atomically:YES];
+    NSLog(@"writing image to %@", imageFile);
+
 }
 
 
@@ -95,7 +97,6 @@ UIImage *mImage = nil;
 
 - (void)addFaceBorders{
     if( mState == STATE_IDLE){
-        NSLog(@"should do something here");
         if( mArrayFaceBorders != nil ){
             if( self.borderView != nil ){
                 self.borderView.mJSONArray = mArrayFaceBorders;
@@ -115,8 +116,9 @@ UIImage *mImage = nil;
     } completed:^(UIImage * _Nullable image, NSData * _Nullable data, NSError * _Nullable error, SDImageCacheType cacheType, BOOL finished, NSURL * _Nullable imageURL) {
         if( image != nil && error == nil ){
             mImage = image;
-            NSString *filename = [imageURL lastPathComponent];
-            [self writeImageFile:filename :image];
+// don't use name on server, use specified filename
+//            NSString *filename = [imageURL lastPathComponent];
+            [self writeImageFile:@"image.jpg" :image];
             [self updateLoadingState: STATE_WAITING_FOR_IMAGE];
             [self addFaceBorders];
             self.borderView.image = image;
@@ -133,7 +135,6 @@ UIImage *mImage = nil;
 - (void)downloadJSON {
     AFHTTPSessionManager *afSessionManager = [AFHTTPSessionManager manager];
     [afSessionManager GET:jsonURL parameters:nil progress:nil success:^(NSURLSessionTask *task, id responseObject) {
-        NSLog(@"JSON: %@", responseObject);
         mArrayFaceBorders = [NSArray arrayWithArray:(NSArray *)responseObject];
         [self writeJSONFile];
         [self updateLoadingState: STATE_WAITING_FOR_JSON];
@@ -145,7 +146,10 @@ UIImage *mImage = nil;
 }
 
 - (void)checkRetryQueue {
-    // nothing very sophisticated for test app but would possibly have UI for letting user
+    // this gets called before the file downloads can fail in most ways
+    // so nothing happens
+    // nothing very sophisticated for test app
+    // but would possibly have UI for letting user
     // retry more times or stop trying
     if( mState &= STATE_FAILED_JSON){
         [self clearErrorState:STATE_FAILED_JSON :STATE_WAITING_FOR_JSON];
@@ -183,6 +187,72 @@ UIImage *mImage = nil;
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
+}
+
+- (void)viewDidLayoutSubviews {
+    [self.textView setContentOffset:CGPointZero animated:NO];
+}
+
+-(void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event{
+    
+    if( mArrayFaceBorders == nil ){
+        return;
+    }
+    if( self.borderView.image != nil && mArrayFaceBorders != nil){
+        NSString *oldSelectedFaceId = self.borderView.selectedFaceId;
+        self.borderView.selectedFaceId = nil;
+        for(UITouch * touch in touches){
+            CGPoint location = [touch locationInView:touch.view];
+            for( NSDictionary *dictJSON in mArrayFaceBorders){
+                NSDictionary *faceRectangle = [dictJSON objectForKey:@"faceRectangle"];
+                if( faceRectangle != nil ){
+                    NSNumber *top = [faceRectangle objectForKey:@"top"];
+                    NSNumber *width = [faceRectangle objectForKey:@"width"];
+                    NSNumber *left = [faceRectangle objectForKey:@"left"];
+                    NSNumber *height = [faceRectangle objectForKey:@"height"];
+                    
+                    long artop = [top longValue] * self.borderView.mScaleY;
+                    long arwidth = [width longValue] * self.borderView.mScaleX;
+                    long arleft = [left longValue] * self.borderView.mScaleX;
+                    long arheight = [height longValue] * self.borderView.mScaleY;
+                    if( location.y >= artop && location.y < artop + arheight &&
+                       location.x >= arleft && location.x < arleft + arwidth){
+                        NSString *newSelectedFaceId = [dictJSON objectForKey:@"faceId"];
+                        // change of selection if inside
+                        if( newSelectedFaceId != oldSelectedFaceId ){
+                            self.borderView.selectedFaceId = newSelectedFaceId;
+                            NSDictionary *dictAttributes = [dictJSON objectForKey:@"faceAttributes"];
+                            NSDictionary *emotions = [dictAttributes objectForKey:@"emotion"];
+                            long maxEmotion = -1;
+                            NSString *printEmotion = @"none";
+                            for(id key in  emotions){
+                                NSNumber *value = [emotions objectForKey:key];
+                                if( [value longValue] > maxEmotion ){
+                                    printEmotion = key;
+                                    maxEmotion = [value longValue];
+                                }
+                            }
+                            float percent = 100.0f * [width floatValue] * [height floatValue] / (self.borderView.image.size.height * self.borderView.image.size.width);
+                            NSString *outputString = [NSString stringWithFormat:
+                                                      @"Gender: %@ \nAge: %@\nMost confident emotion: %@\nRatio of face to photo: %.01f",
+                                                      [dictAttributes objectForKey:@"gender"], [dictAttributes objectForKey:@"age"], printEmotion, percent];
+                            self.textView.text = outputString;
+                        }
+                        // clear selection if inside same box as prior
+                        else{
+                            self.borderView.selectedFaceId = nil;
+                            self.textView.text = @"";
+                        }
+                    }
+                    
+                }
+            }
+        }
+        // force redraw if change
+        if( oldSelectedFaceId != self.borderView.selectedFaceId){
+            [self.borderView setNeedsDisplay];
+        }
+    }
 }
 
 - (void)dealloc {
