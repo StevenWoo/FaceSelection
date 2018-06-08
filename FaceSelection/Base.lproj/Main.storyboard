@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="14109" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="BYZ-38-t0r">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="14113" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="BYZ-38-t0r">
     <device id="retina4_7" orientation="portrait">
         <adaptation id="fullscreen"/>
     </device>
     <dependencies>
         <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="14088"/>
-        <capability name="Aspect ratio constraints" minToolsVersion="5.1"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -15,23 +14,18 @@
         <scene sceneID="tne-QT-ifu">
             <objects>
                 <viewController id="BYZ-38-t0r" customClass="ViewController" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="8bC-Xf-vdC">
+                    <view key="view" contentMode="scaleToFill" id="8bC-Xf-vdC" customClass="BorderView">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="G5b-Wj-zyR">
-                                <rect key="frame" x="0.0" y="0.0" width="375" height="375"/>
-                                <color key="backgroundColor" red="0.90196078430000004" green="0.90196078430000004" blue="0.90196078430000004" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                <constraints>
-                                    <constraint firstAttribute="width" secondItem="G5b-Wj-zyR" secondAttribute="height" multiplier="1:1" id="gfJ-cV-y2U"/>
-                                </constraints>
-                            </imageView>
-                            <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" hidesWhenStopped="YES" animating="YES" style="whiteLarge" translatesAutoresizingMaskIntoConstraints="NO" id="Bcp-j8-1aQ">
+                            <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" hidesWhenStopped="YES" animating="YES" style="whiteLarge" translatesAutoresizingMaskIntoConstraints="NO" id="Bcp-j8-1aQ">
                                 <rect key="frame" x="169" y="169" width="37" height="37"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <color key="color" red="0.29020000000000001" green="0.29020000000000001" blue="0.29020000000000001" alpha="1" colorSpace="custom" customColorSpace="calibratedRGB"/>
                             </activityIndicatorView>
-                            <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" editable="NO" textAlignment="natural" selectable="NO" translatesAutoresizingMaskIntoConstraints="NO" id="19e-i3-Gep">
+                            <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" fixedFrame="YES" editable="NO" textAlignment="natural" selectable="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Mfr-LA-uyG">
                                 <rect key="frame" x="0.0" y="375" width="375" height="292"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMinY="YES"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <string key="text">Lorem ipsum dolor sit er elit lamet, consectetaur cillium adipisicing pecu, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Nam liber te conscient to factor tum poen legum odioque civiuda.</string>
                                 <fontDescription key="fontDescription" name="AvenirNext-Regular" family="Avenir Next" pointSize="17"/>
@@ -39,23 +33,12 @@
                             </textView>
                         </subviews>
                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                        <constraints>
-                            <constraint firstItem="Bcp-j8-1aQ" firstAttribute="centerX" secondItem="G5b-Wj-zyR" secondAttribute="centerX" id="Gwe-sD-gVB"/>
-                            <constraint firstItem="G5b-Wj-zyR" firstAttribute="top" secondItem="8bC-Xf-vdC" secondAttribute="top" id="Nwz-eY-xt5"/>
-                            <constraint firstItem="19e-i3-Gep" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" id="Vju-tI-6WK"/>
-                            <constraint firstItem="19e-i3-Gep" firstAttribute="bottom" secondItem="6Tk-OE-BBY" secondAttribute="bottom" id="bf6-Cg-Ip9"/>
-                            <constraint firstItem="19e-i3-Gep" firstAttribute="top" secondItem="G5b-Wj-zyR" secondAttribute="bottom" id="lIW-2x-5BB"/>
-                            <constraint firstItem="19e-i3-Gep" firstAttribute="trailing" secondItem="6Tk-OE-BBY" secondAttribute="trailing" id="wfX-eg-NSO"/>
-                            <constraint firstItem="G5b-Wj-zyR" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" id="xYu-JK-2v2"/>
-                            <constraint firstItem="Bcp-j8-1aQ" firstAttribute="centerY" secondItem="G5b-Wj-zyR" secondAttribute="centerY" id="xat-lb-4wX"/>
-                            <constraint firstItem="G5b-Wj-zyR" firstAttribute="trailing" secondItem="6Tk-OE-BBY" secondAttribute="trailing" id="zxG-qD-2U6"/>
-                        </constraints>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                     </view>
                     <connections>
-                        <outlet property="imageView" destination="G5b-Wj-zyR" id="dcb-fM-tO0"/>
+                        <outlet property="borderView" destination="8bC-Xf-vdC" id="gy9-sP-e5g"/>
                         <outlet property="loadingIndicator" destination="Bcp-j8-1aQ" id="oix-zx-EDz"/>
-                        <outlet property="textView" destination="19e-i3-Gep" id="tLr-VR-H3V"/>
+                        <outlet property="textView" destination="Mfr-LA-uyG" id="y1b-Hs-bJI"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>

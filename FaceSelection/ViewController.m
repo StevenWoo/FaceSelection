@@ -9,12 +9,14 @@
 #import <AFNetworking/AFNetworking.h>
 
 #import "ViewController.h"
+#import "BorderView.h"
 
 @interface ViewController ()
 
 @property (nonatomic, weak) IBOutlet UIImageView *imageView;
 @property (nonatomic, weak) IBOutlet UIActivityIndicatorView *loadingIndicator;
 @property (nonatomic, weak) IBOutlet UITextView *textView;
+@property (nonatomic, weak) IBOutlet BorderView *borderView;
 
 @end
 
@@ -25,9 +27,10 @@
 const unsigned int STATE_IDLE = 0;
 const unsigned int STATE_WAITING_FOR_IMAGE = 1;
 const unsigned int STATE_WAITING_FOR_JSON = 2;
+const unsigned int STATE_FAILED_JSON = 4;
+const unsigned int STATE_FAILED_IMAGE = 8;
 
 NSString *const imageUrl = @"https://s3-us-west-2.amazonaws.com/precious-interview/ios-face-selection/family.jpg";
-NSString *const placeholder = @"placeholder.png";
 NSString *const jsonURL = @"https://s3-us-west-2.amazonaws.com/precious-interview/ios-face-selection/family_faces.json";
 unsigned int mState;
 NSArray *mArrayFaceBorders = nil;
@@ -71,14 +74,33 @@ UIImage *mImage = nil;
             [self.loadingIndicator stopAnimating];
             self.loadingIndicator.hidden = YES;
         }
-        
     }
 }
+
+- (void)setErrorState:(unsigned int) clearBit :(unsigned int) setBit {
+    @synchronized(self){
+        mState &= setBit;
+        mState &= ~(clearBit);
+    }
+}
+
+- (void)clearErrorState:(unsigned int) clearBit :(unsigned int) setBit {
+    @synchronized(self){
+        mState &= setBit;
+        mState &= ~(clearBit);
+    }
+}
+
+
 
 - (void)addFaceBorders{
     if( mState == STATE_IDLE){
         NSLog(@"should do something here");
         if( mArrayFaceBorders != nil ){
+            if( self.borderView != nil ){
+                self.borderView.mJSONArray = mArrayFaceBorders;
+                [self.borderView setNeedsDisplay];
+            }
         }
     }
     else{
@@ -86,15 +108,7 @@ UIImage *mImage = nil;
     }
 }
 
-- (void)viewDidLoad {
-    [super viewDidLoad];
-    // Do any additional setup after loading the view, typically from a nib.
-    
-    self.loadingIndicator.hidden = NO;
-    [self.loadingIndicator startAnimating];
-    self.imageView.image = nil;
-    self.textView.text = nil;
-    mState = STATE_WAITING_FOR_JSON | STATE_WAITING_FOR_IMAGE;
+- (void)downloadImage {
     SDWebImageManager *sdWebManager = [SDWebImageManager sharedManager];
     [sdWebManager loadImageWithURL:[NSURL URLWithString:imageUrl] options:kNilOptions progress:^(NSInteger receivedSize, NSInteger expectedSize, NSURL * _Nullable targetURL) {
         //
@@ -105,15 +119,18 @@ UIImage *mImage = nil;
             [self writeImageFile:filename :image];
             [self updateLoadingState: STATE_WAITING_FOR_IMAGE];
             [self addFaceBorders];
+            self.borderView.image = image;
+            [self.borderView setNeedsDisplay];
         }
         
         if( error != nil ){
-            NSLog(@"Error is %@", error);
+            NSLog(@"Error download image is %@", error);
+            [self setErrorState:STATE_WAITING_FOR_IMAGE :STATE_FAILED_IMAGE];
         }
-        
-        
     }];
 
+}
+- (void)downloadJSON {
     AFHTTPSessionManager *afSessionManager = [AFHTTPSessionManager manager];
     [afSessionManager GET:jsonURL parameters:nil progress:nil success:^(NSURLSessionTask *task, id responseObject) {
         NSLog(@"JSON: %@", responseObject);
@@ -122,8 +139,44 @@ UIImage *mImage = nil;
         [self updateLoadingState: STATE_WAITING_FOR_JSON];
         [self addFaceBorders];
     } failure:^(NSURLSessionTask *operation, NSError *error) {
-        NSLog(@"Error: %@", error);
+        NSLog(@"Error getting json: %@", error);
+        [self setErrorState:STATE_WAITING_FOR_JSON :STATE_FAILED_JSON];
     }];
+}
+
+- (void)checkRetryQueue {
+    // nothing very sophisticated for test app but would possibly have UI for letting user
+    // retry more times or stop trying
+    if( mState &= STATE_FAILED_JSON){
+        [self clearErrorState:STATE_FAILED_JSON :STATE_WAITING_FOR_JSON];
+        [self downloadJSON];
+    }
+    if( mState &= STATE_FAILED_IMAGE){
+        [self clearErrorState:STATE_FAILED_IMAGE :STATE_WAITING_FOR_IMAGE];
+        [self downloadImage];
+    }
+}
+
+- (void) setState:(unsigned int) newState {
+    @synchronized(self){
+        mState = newState;
+    }
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view, typically from a nib.
+    
+    self.loadingIndicator.hidden = NO;
+    [self.loadingIndicator startAnimating];
+    self.borderView.image = nil;
+    self.borderView.mJSONArray = nil;
+    self.borderView.selectedFaceId = nil;
+    self.textView.text = nil;
+    [self setState:STATE_WAITING_FOR_JSON | STATE_WAITING_FOR_IMAGE];
+    [self downloadImage];
+    [self downloadJSON];
+    [self checkRetryQueue];
 }
 
 
@@ -132,5 +185,8 @@ UIImage *mImage = nil;
     // Dispose of any resources that can be recreated.
 }
 
-
+- (void)dealloc {
+    mArrayFaceBorders = nil;
+    mImage = nil;
+}
 @end
