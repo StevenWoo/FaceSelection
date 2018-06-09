@@ -203,6 +203,10 @@ UIImage *mImage = nil;
         self.borderView.selectedFaceId = nil;
         for(UITouch * touch in touches){
             CGPoint location = [touch locationInView:touch.view];
+            float clickX = location.x / self.borderView.mImageScale;
+            float clickY = location.y / self.borderView.mImageScale;
+            NSLog(@"click x, y = %f %f versus scaled %f %f", location.x, location.y, clickX, clickY);
+
             for( NSDictionary *dictJSON in mArrayFaceBorders){
                 NSDictionary *faceRectangle = [dictJSON objectForKey:@"faceRectangle"];
                 if( faceRectangle != nil ){
@@ -211,15 +215,19 @@ UIImage *mImage = nil;
                     NSNumber *left = [faceRectangle objectForKey:@"left"];
                     NSNumber *height = [faceRectangle objectForKey:@"height"];
                     
-                    long artop = [top longValue] * self.borderView.mScaleY;
-                    long arwidth = [width longValue] * self.borderView.mScaleX;
-                    long arleft = [left longValue] * self.borderView.mScaleX;
-                    long arheight = [height longValue] * self.borderView.mScaleY;
-                    if( location.y >= artop && location.y < artop + arheight &&
-                       location.x >= arleft && location.x < arleft + arwidth){
+                    long artop = [top longValue];
+                    long arwidth = [width longValue] ;
+                    long arleft = [left longValue];
+                    long arheight = [height longValue];
+                    NSLog(@"checking against top:%ld left:%ld width:%ld height:%ld", artop, arleft, arwidth, arheight);
+                    if( clickY >= artop && clickY < artop + arheight &&
+                       clickX >= arleft && clickX < arleft + arwidth){
                         NSString *newSelectedFaceId = [dictJSON objectForKey:@"faceId"];
                         // change of selection if inside
+                        NSLog(@"match this one");
                         if( newSelectedFaceId != oldSelectedFaceId ){
+                            NSLog(@"selected this one");
+
                             self.borderView.selectedFaceId = newSelectedFaceId;
                             NSDictionary *dictAttributes = [dictJSON objectForKey:@"faceAttributes"];
                             NSDictionary *emotions = [dictAttributes objectForKey:@"emotion"];
@@ -240,6 +248,8 @@ UIImage *mImage = nil;
                         }
                         // clear selection if inside same box as prior
                         else{
+                            NSLog(@"deselected this one");
+
                             self.borderView.selectedFaceId = nil;
                             self.textView.text = @"";
                         }

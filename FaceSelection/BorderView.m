@@ -17,15 +17,32 @@
 @implementation BorderView
 
 
-
-- (UIImage *)imageScaledToFitToSize:(CGSize)size {
-    CGRect scaledRect = AVMakeRectWithAspectRatioInsideRect(self.image.size, CGRectMake(0, 0, size.width, size.height));
-    UIGraphicsBeginImageContextWithOptions(size, NO, 0);
-    [self.image drawInRect:scaledRect];
-    UIImage *scaledImage = UIGraphicsGetImageFromCurrentImageContext();
+- (UIImage *)imageWithImage:(UIImage *)image scaledToSize:(CGSize)size {
+    if ([[UIScreen mainScreen] respondsToSelector:@selector(scale)]) {
+        UIGraphicsBeginImageContextWithOptions(size, NO, [[UIScreen mainScreen] scale]);
+    } else {
+        UIGraphicsBeginImageContext(size);
+    }
+    [image drawInRect:CGRectMake(0, 0, size.width, size.height)];
+    UIImage *newImage = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();
-    return scaledImage;
+    
+    return newImage;
 }
+- (UIImage *)imageWithImage:(UIImage *)image scaledToMaxWidth:(CGFloat)width maxHeight:(CGFloat)height {
+    CGFloat oldWidth = image.size.width;
+    CGFloat oldHeight = image.size.height;
+    
+    //
+    _mImageScale = (oldWidth < oldHeight) ? width / oldWidth : height / oldHeight;
+    NSLog(@"mImageScale set to %f", _mImageScale);
+    CGFloat newHeight = oldHeight * _mImageScale;
+    CGFloat newWidth = oldWidth * _mImageScale;
+    CGSize newSize = CGSizeMake(newWidth, newHeight);
+    
+    return [self imageWithImage:image scaledToSize:newSize];
+}
+
 
 -(void)drawRect:(CGRect)rect{
 
@@ -37,11 +54,12 @@
     cgSize.height = self.image.size.height;
     cgSize.width = self.image.size.width;
     rect.size.height = rect.size.height/2;
-    UIImage *scaledImage =[self imageScaledToFitToSize:cgSize];
-    [scaledImage drawInRect:rect];
+    UIImage *scaledImage =[self imageWithImage:self.image scaledToMaxWidth:rect.size.width maxHeight:rect.size.height];
+    CGRect imageRect = CGRectMake(0, 0, scaledImage.size.width, scaledImage.size.height);
+    [scaledImage drawInRect:imageRect];
     
-    self.mScaleX = rect.size.width/self.image.size.width;
-    self.mScaleY = (rect.size.height)/self.image.size.height;
+    self.mScaleX = _mImageScale * rect.size.width/self.image.size.width;
+    self.mScaleY = _mImageScale * (rect.size.height)/self.image.size.height;
 
     if( _mJSONArray != nil ){
         CGContextRef context = UIGraphicsGetCurrentContext ();
@@ -75,10 +93,10 @@
                 }
                 CGContextSetLineWidth(context, lineWidth);
                 
-                long artop = [top longValue] * self.mScaleY;
-                long arwidth = [width longValue] * self.mScaleX;
-                long arleft = [left longValue] * self.mScaleX;
-                long arheight = [height longValue] * self.mScaleY;
+                long artop = _mImageScale * [top longValue];
+                long arwidth = _mImageScale * [width longValue];
+                long arleft = _mImageScale * [left longValue] ;
+                long arheight = _mImageScale * [height longValue];
     
                 CGContextMoveToPoint(context, arleft, artop); //start at this point
                 
@@ -111,8 +129,8 @@
                             NSNumber *faceLandmarkY = [coordinate objectForKey:@"y"];
                             
                             CGContextFillEllipseInRect(context,
-                                                       CGRectMake([faceLandmarkX floatValue] * self.mScaleX,
-                                                                    [faceLandmarkY floatValue] * self.mScaleY,
+                                                       CGRectMake([faceLandmarkX floatValue] * self.mImageScale,
+                                                                    [faceLandmarkY floatValue] * self.mImageScale,
                                                                     2.0f,2.0f));
                         }
                     }
