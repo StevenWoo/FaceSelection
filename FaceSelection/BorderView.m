@@ -34,7 +34,7 @@
     CGFloat oldHeight = image.size.height;
     
     //
-    _mImageScale = (oldWidth < oldHeight) ? width / oldWidth : height / oldHeight;
+    _mImageScaleV1 = (oldWidth < oldHeight) ? width / oldWidth : height / oldHeight;
     NSLog(@"mImageScale set to %f", _mImageScale);
     CGFloat newHeight = oldHeight * _mImageScale;
     CGFloat newWidth = oldWidth * _mImageScale;
@@ -54,12 +54,28 @@
     cgSize.height = self.image.size.height;
     cgSize.width = self.image.size.width;
     rect.size.height = rect.size.height/2;
-    UIImage *scaledImage =[self imageWithImage:self.image scaledToMaxWidth:rect.size.width maxHeight:rect.size.height];
+    
+    CGFloat aspectRatioView = rect.size.height/rect.size.width;
+    CGFloat aspectRatioSource = cgSize.height/cgSize.width;
+    // view is taller than source
+    // so we can draw the full width of image into view
+    // and scale the height of image and leave some of the view empty along y axis
+    CGSize testSize;
+    if( aspectRatioView > aspectRatioSource ){
+        _mImageScale = rect.size.width/cgSize.width;
+        testSize.width = rect.size.width;
+        testSize.height = _mImageScale * cgSize.height;
+    }
+    else {
+        _mImageScale = rect.size.height/cgSize.height;
+        testSize.width = _mImageScale * cgSize.width;
+        testSize.height = rect.size.height;
+    }
+    UIImage *scaledImage = [self imageWithImage:self.image scaledToSize:testSize];
+//    UIImage *scaledImage =[self imageWithImage:self.image scaledToMaxWidth:rect.size.width maxHeight:rect.size.height];
     CGRect imageRect = CGRectMake(0, 0, scaledImage.size.width, scaledImage.size.height);
     [scaledImage drawInRect:imageRect];
     
-    self.mScaleX = _mImageScale * rect.size.width/self.image.size.width;
-    self.mScaleY = _mImageScale * (rect.size.height)/self.image.size.height;
 
     if( _mJSONArray != nil ){
         CGContextRef context = UIGraphicsGetCurrentContext ();

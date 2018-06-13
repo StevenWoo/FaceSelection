@@ -12,8 +12,7 @@
 @interface BorderView : UIView
 // these are all retained by controller
 @property (nonatomic, weak) UIImage *image;
-@property (nonatomic) CGFloat mScaleX;
-@property (nonatomic) CGFloat mScaleY;
+@property (nonatomic) CGFloat mImageScaleV1;
 @property (nonatomic) CGFloat mImageScale;
 @property (nonatomic, weak) NSString *selectedFaceId;
 @property (nonatomic, weak) NSArray * mJSONArray;
